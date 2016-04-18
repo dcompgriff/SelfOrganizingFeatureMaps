@@ -64,7 +64,6 @@ def main():
         for col in range(0, 10):
             if (row, col) not in tups:
                 tupList.append((row, col, '-'))
-    #tupList = mSOFM.getAllNeuronActivations(dataValues, classColumnIndex=data.shape[1] - 1)
 
     exWeights = mSOFM.neurons[0].weights
     print("Example Weights: ")
@@ -80,6 +79,18 @@ def main():
         ax.text(tup[0], tup[1], tup[2])
     plt.show()
 
+    # Find the closest class for each neuron.
+    tupList = mSOFM.getAllNeuronActivations(zeroAttrData, classLabels=data['name'])
+
+    xVals = list(map(lambda item: item[0], tupList))
+    yVals = list(map(lambda item: item[1], tupList))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig.set_size_inches(10, 8, forward=True)
+    ax.scatter(xVals, yVals)
+    for tup in tupList:
+        ax.text(tup[0], tup[1], tup[2])
+    plt.show()
 
 if __name__ == "__main__":
     main()

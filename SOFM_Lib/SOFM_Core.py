@@ -132,24 +132,17 @@ class SOFMGrid:
     '''
     Get the grid of all neurons, and which animal class they are closest to.
     '''
-    def getAllNeuronActivations(self, data, classColumnIndex):
-        if classColumnIndex != data.shape[1] - 1:
-            #If class column index isn't the final column, then parse our class column and stack arrays.
-            mData = np.hstack((data[:, :classColumnIndex], data[: , classColumnIndex+1:])).copy()
-        else:
-            #Otherwise, simply filter out the last column.
-            mData = data[:, :-1].copy()
-
+    def getAllNeuronActivations(self, data, classLabels):
         # Find data point for which each neuron is closest to.
         tupList = []
         for neuron in self.neurons:
             minDist = 10000000000
-            closestLabel = data[0, -1]
+            closestLabel = None
             # Loop through all animal points, and find the closest one.
-            for index in range(0, mData.shape[0]):
-                dist = scipy_dist.euclidean(mData[index], neuron.weights)
+            for index in range(0, data.shape[0]):
+                dist = scipy_dist.euclidean(data[index], neuron.weights)
                 if dist < minDist:
-                    closestLabel = data[index, -1]
+                    closestLabel = classLabels[index]
                     minDist = dist
             # Append the closest animal label tuple to the tupList.
             tupList.append((neuron.row, neuron.col, closestLabel))
