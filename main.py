@@ -11,15 +11,31 @@ import numpy as np
 import pandas as pd
 import scipy as scipy
 from SOFM_Lib import SOFM_Core
-
-
+import matplotlib.pyplot as plt
 
 
 def main():
     print("Running Main.")
 
-    mSOFM = SOFM_Core.SOFMGrid()
+    # Read data.
+    data = pd.read_csv('./animals.csv')
+    # Create SOFm grid.
+    mSOFM = SOFM_Core.SOFMGrid(input_size=13 , row_size=10, col_size=10)
+    # Train grid.
+    mSOFM.train(data[data.columns[:-1]].values, epochs=1)
+    # Show maximal activations.
+    #tupList = mSOFM.getMaxActivations(data.values, classColumnIndex=data.shape[1] - 1)
+    tupList = mSOFM.getAllNeuronActivations(data.values, classColumnIndex=data.shape[1] - 1)
 
+    xVals = list(map(lambda item: item[0], tupList))
+    yVals = list(map(lambda item: item[1], tupList))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig.set_size_inches(10, 8, forward=True)
+    ax.scatter(xVals, yVals)
+    for tup in tupList:
+        ax.text(tup[0], tup[1], tup[2])
+    plt.show()
 
 
 if __name__ == "__main__":

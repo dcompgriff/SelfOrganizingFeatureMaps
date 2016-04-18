@@ -43,7 +43,7 @@ class SOFMGrid:
         N(i, i*, t) = exp(-1*( ( -(||ri - ri*||)^2 )/(2sigma(t)^2) )
             -ri is the position of neuron i in the grid.
             -ri* is the position of the winning neuron i* in the grid.
-        sigma(t) = sigmo_0(exp(-t/tau)
+        sigma(t) = sigmo_0*exp(-t/tau)
             -Tau is a time constant (Typically around 1000ish).
     '''
     def train(self, train_data, epochs=2000):
@@ -54,6 +54,7 @@ class SOFMGrid:
 
         # Iterate over the number of time iterations.
         for epoch in range(0, epochs):
+            print("Epoch: " + str(epochs))
             # Shuffle the training data.
             np.random.shuffle(mTrainData)
             # Loop over each datapoint.
@@ -61,7 +62,7 @@ class SOFMGrid:
                 # Get the row and column for the closest neuron.
                 row, col, index = self.findClosestNeuron(dataPoint)
                 # Update all weights.
-                self.updateWeights(index)
+                self.updateWeights(index, dataPoint, time)
                 #Increment the time parameter.
                 time += 1
 
@@ -69,13 +70,12 @@ class SOFMGrid:
     Update the weights in the network using a radial distance function.
     '''
     def updateWeights(self, maxNeuronPos, x, t):
-
         for neuron in self.neurons:
             # Get the weights for the neuron.
             weights = neuron.weights
             for i in range(0, weights.shape[0]):
                 # Calculate delta wi using the time decaying radial distance function.
-                dwi = weights[i] + (self.eta * self.radialDist(i, maxNeuronPos, t) * (x[i] - weights[i]))
+                dwi = weights[i] + (self.eta(t) * self.radialDist(i, maxNeuronPos, t) * (x[i] - weights[i]))
                 # Update the weights.
                 weights[i] += dwi
 
@@ -119,6 +119,54 @@ class SOFMGrid:
         return maxPos[0], maxPos[1], maxIndex
 
     '''
+    Returns a list of tuples, where each tuple is a neuron with:
+    (<row>, <col>, <class>).
+    '''
+    def getMaxActivations(self, data, classColumnIndex):
+        mData = None
+        if classColumnIndex != data.shape[1] - 1:
+            #If class column index isn't the final column, then parse our class column and stack arrays.
+            mData = np.hstack((data[:, :classColumnIndex], data[: , classColumnIndex+1:])).copy()
+        else:
+            #Otherwise, simply filter out the last column.
+            mData = data[:, :-1].copy()
+
+        # Find Max Activations and label them.
+        tupList = []
+        for index in range(0, mData.shape[0]):
+            row, col, index = self.findClosestNeuron(mData[index])
+            tupList.append((row, col, data[index, -1]))
+
+        return tupList
+
+    '''
+    Get the grid of all neurons, and which animal class they are closest to.
+    '''
+    def getAllNeuronActivations(self, data, classColumnIndex):
+        if classColumnIndex != data.shape[1] - 1:
+            #If class column index isn't the final column, then parse our class column and stack arrays.
+            mData = np.hstack((data[:, :classColumnIndex], data[: , classColumnIndex+1:])).copy()
+        else:
+            #Otherwise, simply filter out the last column.
+            mData = data[:, :-1].copy()
+
+        # Find data point for which each neuron is closest to.
+        tupList = []
+        for neuron in self.neurons:
+            minDist = 10000
+            closestLabel = data[0, -1]
+            # Loop through all animal points, and find the closest one.
+            for index in range(0, mData.shape[0]):
+                dist = scipy_dist.euclidean(mData[index], neuron.weights)
+                if dist < minDist:
+                    closestLabel = data[index, -1]
+                    minDist = dist
+            # Append the closest animal label tuple to the tupList.
+            tupList.append((neuron.row, neuron.col, closestLabel))
+
+        return tupList
+
+    '''
     Return x, y of time response of the sigma function over time.
     '''
     def plotSigmaOverTime(self, time_steps=1000):
@@ -153,7 +201,7 @@ class Neuron:
     Return the distance, or magnitude between a point x and this neuron's weight vector.
     '''
     def dist(self, x):
-        scipy_dist.euclidean(x, self.weights)
+        return scipy_dist.euclidean(x, self.weights)
     '''
     Return the dot product of the neuron weights and the input data.
     '''
