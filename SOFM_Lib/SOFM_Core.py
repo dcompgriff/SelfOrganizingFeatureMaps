@@ -14,14 +14,12 @@ import scipy.spatial.distance as scipy_dist
 class SOFMGrid:
 
     def __init__(self, input_size=1, row_size=1, col_size=1):
-        self.width = 1
-        self.height = 1
         # Eta, learning rate. Initially, set as constant.
         self.eta0 = .1
         self.eta_tau = 1000
         # Time constant for the decaying sigma.
-        self.sigma0 = 1000
-        self.sigma_tau = 1000
+        self.sigma0 = 2
+        self.sigma_tau = 800
         # SOFM Grid size.
         self.row_size = row_size
         self.col_size = col_size
@@ -54,7 +52,7 @@ class SOFMGrid:
 
         # Iterate over the number of time iterations.
         for epoch in range(0, epochs):
-            print("Epoch: " + str(epochs))
+            print("Epoch: " + str(epoch))
             # Shuffle the training data.
             np.random.shuffle(mTrainData)
             # Loop over each datapoint.
@@ -75,7 +73,7 @@ class SOFMGrid:
             weights = neuron.weights
             for i in range(0, weights.shape[0]):
                 # Calculate delta wi using the time decaying radial distance function.
-                dwi = weights[i] + (self.eta(t) * self.radialDist(i, maxNeuronPos, t) * (x[i] - weights[i]))
+                dwi = (self.eta(t) * self.radialDist(i, maxNeuronPos, t) * (x[i] - weights[i]))
                 # Update the weights.
                 weights[i] += dwi
 
@@ -87,7 +85,7 @@ class SOFMGrid:
         i_pos = np.array([self.neurons[i].row, self.neurons[i].col])
         i_max_pos = np.array([self.neurons[i_max].row, self.neurons[i_max].col])
         # Calculate the time-shrinking, radial distance function.
-        radDist = math.exp( -(scipy_dist.euclidean(i_pos, i_max_pos)**2) / (2*(self.sigma(t)**2)) )
+        radDist = math.exp( -1.0*(scipy_dist.euclidean(i_pos, i_max_pos)**2) / (2.0*(self.sigma(t)**2)) )
         return radDist
 
     '''
@@ -107,7 +105,7 @@ class SOFMGrid:
     '''
     def findClosestNeuron(self, x):
         maxPos = (0, 0)
-        minDist = 10000
+        minDist = 1000000000
         maxIndex = 0
         for i in range(0, len(self.neurons)):
             dist = self.neurons[i].dist(x)
@@ -153,7 +151,7 @@ class SOFMGrid:
         # Find data point for which each neuron is closest to.
         tupList = []
         for neuron in self.neurons:
-            minDist = 10000
+            minDist = 10000000000
             closestLabel = data[0, -1]
             # Loop through all animal points, and find the closest one.
             for index in range(0, mData.shape[0]):

@@ -1,4 +1,4 @@
-is_small, is_medium, is_big, has_2_legs, has_4_legs, has_hair, has_hooves, has_mane, has_feathers, likes_to_hunt, likes_to_run, likes_to_fly, likes_to_swim, name
+is_small,is_medium,is_big,has_2_legs,has_4_legs,has_hair,has_hooves,has_mane,has_feathers,likes_to_hunt,likes_to_run,likes_to_fly,likes_to_swim,name
 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0,Dove
 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0,Hen
 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1,Duck
