@@ -10,13 +10,16 @@ training the SOFM core.
 import numpy as np
 import pandas as pd
 import scipy as scipy
-
+from SOFM_Lib import SOFM_Core
 
 
 
 
 def main():
     print("Running Main.")
+
+    mSOFM = SOFM_Core.SOFMGrid()
+
 
 
 if __name__ == "__main__":
