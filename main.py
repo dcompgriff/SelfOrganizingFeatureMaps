@@ -53,24 +53,32 @@ def main():
     # Train grid.
     dataValues = data[data.columns[:-1]].values
     dataValues = np.hstack((dataValues, np.array(oneHotLabelsList)))
-    mSOFM.train(dataValues, epochs=10)
-    # Show maximal activations.
-    #tupList = mSOFM.getMaxActivations(data.values, classColumnIndex=data.shape[1] - 1)
+    mSOFM.train(dataValues, epochs=1)
+
+    # Create a data set for probing, where each animal label has attributes 0.
+    zeroAttrData = np.zeros((data[data.columns[:-1]].values.shape))
+    zeroAttrData = np.hstack((zeroAttrData, np.array(oneHotLabelsList)))
+    tupList = mSOFM.getMaxActivations(zeroAttrData, data['name'])
+    tups = list(map(lambda item: (item[0], item[1]), tupList))
+    for row in range(0, 10):
+        for col in range(0, 10):
+            if (row, col) not in tups:
+                tupList.append((row, col, '-'))
     #tupList = mSOFM.getAllNeuronActivations(dataValues, classColumnIndex=data.shape[1] - 1)
 
     exWeights = mSOFM.neurons[0].weights
     print("Example Weights: ")
     print(exWeights)
 
-    # xVals = list(map(lambda item: item[0], tupList))
-    # yVals = list(map(lambda item: item[1], tupList))
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # fig.set_size_inches(10, 8, forward=True)
-    # ax.scatter(xVals, yVals)
-    # for tup in tupList:
-    #     ax.text(tup[0], tup[1], tup[2])
-    # plt.show()
+    xVals = list(map(lambda item: item[0], tupList))
+    yVals = list(map(lambda item: item[1], tupList))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig.set_size_inches(10, 8, forward=True)
+    ax.scatter(xVals, yVals)
+    for tup in tupList:
+        ax.text(tup[0], tup[1], tup[2])
+    plt.show()
 
 
 if __name__ == "__main__":

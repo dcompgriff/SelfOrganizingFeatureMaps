@@ -19,7 +19,7 @@ class SOFMGrid:
         self.eta_tau = 1000
         # Time constant for the decaying sigma.
         self.sigma0 = 2
-        self.sigma_tau = 800
+        self.sigma_tau = 1400
         # SOFM Grid size.
         self.row_size = row_size
         self.col_size = col_size
@@ -120,20 +120,12 @@ class SOFMGrid:
     Returns a list of tuples, where each tuple is a neuron with:
     (<row>, <col>, <class>).
     '''
-    def getMaxActivations(self, data, classColumnIndex):
-        mData = None
-        if classColumnIndex != data.shape[1] - 1:
-            #If class column index isn't the final column, then parse our class column and stack arrays.
-            mData = np.hstack((data[:, :classColumnIndex], data[: , classColumnIndex+1:])).copy()
-        else:
-            #Otherwise, simply filter out the last column.
-            mData = data[:, :-1].copy()
-
+    def getMaxActivations(self, data, classLabels):
         # Find Max Activations and label them.
         tupList = []
-        for index in range(0, mData.shape[0]):
-            row, col, index = self.findClosestNeuron(mData[index])
-            tupList.append((row, col, data[index, -1]))
+        for index in range(0, data.shape[0]):
+            row, col, i = self.findClosestNeuron(data[index])
+            tupList.append((row, col, classLabels[index]))
 
         return tupList
 
