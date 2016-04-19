@@ -9,7 +9,6 @@ library, should the need or desire ever arise.
 
 import math
 import numpy as np
-import scipy.spatial.distance as scipy_dist
 
 class SOFMGrid:
 
@@ -59,7 +58,7 @@ class SOFMGrid:
             # Loop over each datapoint.
             for dataPoint in mTrainData[:]:
                 # Get the row and column for the closest neuron.
-                row, col, index = self.findClosestNeuron(dataPoint)
+                row, col, index = self.findMaxActivatingNeuron(dataPoint)
                 # Update all weights.
                 self.updateWeights(index, dataPoint, time)
                 #Increment the time parameter.
@@ -76,7 +75,7 @@ class SOFMGrid:
             # Loop over each datapoint.
             for dataPoint in mTrainData[:]:
                 # Get the row and column for the closest neuron.
-                row, col, index = self.findClosestNeuron(dataPoint)
+                row, col, index = self.findMaxActivatingNeuron(dataPoint)
                 # Update all weights.
                 self.updateWeights(index, dataPoint, time)
 
@@ -84,14 +83,13 @@ class SOFMGrid:
     Update the weights in the network using a radial distance function.
     '''
     def updateWeights(self, maxNeuronPos, x, t):
-        for neuron in self.neurons:
-            # Get the weights for the neuron.
-            weights = neuron.weights
-            for i in range(0, weights.shape[0]):
+        for neuronIndex in range(0, len(self.neurons)):
+            neuron = self.neurons[neuronIndex]
+            for i in range(0, neuron.weights.shape[0]):
                 # Calculate delta wi using the time decaying radial distance function.
-                dwi = (self.eta(t) * self.radialDist(i, maxNeuronPos, t) * (x[i] - weights[i]))
+                dwi = (self.eta(t) * self.radialDist(neuronIndex, maxNeuronPos, t) * (x[i] - neuron.weights[i]))
                 # Update the weights.
-                weights[i] += dwi
+                neuron.weights[i] = neuron.weights[i] + dwi
 
     '''
     Calculate the radial distance function.
@@ -101,7 +99,7 @@ class SOFMGrid:
         i_pos = np.array([self.neurons[i].row, self.neurons[i].col])
         i_max_pos = np.array([self.neurons[i_max].row, self.neurons[i_max].col])
         # Calculate the time-shrinking, radial distance function.
-        radDist = math.exp( -1.0*(np.linalg.norm(i_pos - i_max_pos)**2) / (2.0*(self.sigma(t)**2)) )
+        radDist = math.exp( -1.0*(math.pow(np.linalg.norm(i_pos - i_max_pos),2)) / (2.0*math.pow(self.sigma(t),2)) )
         return radDist
 
     '''
@@ -131,6 +129,20 @@ class SOFMGrid:
                 maxIndex = i
 
         return maxPos[0], maxPos[1], maxIndex
+        
+    def findMaxActivatingNeuron(self, x):
+        maxIndex = 0
+        maxOutput = 0
+        pos = (0, 0)
+        for i in range(0, len(self.neurons)):
+            output = self.neurons[i].output(x)
+            if output > maxOutput:
+                maxOutput = output
+                maxIndex = i
+                pos = (self.neurons[i].row, self.neurons[i].col)
+                
+        return pos[0], pos[1], maxIndex
+            
 
     '''
     
@@ -150,7 +162,7 @@ class SOFMGrid:
         # Find Max Activations and label them.
         tupList = []
         for index in range(0, data.shape[0]):
-            row, col, i = self.findClosestNeuron(data[index])
+            row, col, i = self.findMaxActivatingNeuron(data[index])
             tupList.append((row, col, classLabels[index]))
 
         return tupList
@@ -162,14 +174,14 @@ class SOFMGrid:
         # Find data point for which each neuron is closest to.
         tupList = []
         for neuron in self.neurons:
-            minDist = 10000000000
+            maxOutput = 0
             closestLabel = None
             # Loop through all animal points, and find the closest one.
             for index in range(0, data.shape[0]):
-                dist = scipy_dist.euclidean(data[index], neuron.weights)
-                if dist < minDist:
+                output = neuron.output(data[index])
+                if output > maxOutput:
                     closestLabel = classLabels[index]
-                    minDist = dist
+                    maxOutput = output
             # Append the closest animal label tuple to the tupList.
             tupList.append((neuron.row, neuron.col, closestLabel))
 

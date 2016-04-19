@@ -28,6 +28,7 @@ def getOneHotDict(nameSet, scale):
     return mDict
 
 def main():
+    global mSOFM
     print("Running Main.")
 
     # Read data.
@@ -40,23 +41,23 @@ def main():
         oneHotLabelsList.append(oneHotDict[row['name']])
 
     # Parse data, scale it, and rebuild it so that the bit vectors are normalized.
-#    dataToScale = data[data.columns[:-1]].values
-#    animals = data[data.columns[-1]].values
-#    i = 0
-#    dataToScale = dataToScale.astype(np.float32)
-#    for row in dataToScale[:]:
-#        mean = row.mean()
-#        dataToScale[i] = dataToScale[i] * mean
-#        i += 1
-#    data = pd.DataFrame(dataToScale, columns=data.columns[:-1])
-#    data['name'] = animals
+    dataToScale = data[data.columns[:-1]].values
+    animals = data[data.columns[-1]].values
+    i = 0
+    dataToScale = dataToScale.astype(np.float32)
+    for row in dataToScale[:]:
+        mean = row.mean()
+        dataToScale[i] = dataToScale[i] * mean
+        i += 1
+    data = pd.DataFrame(dataToScale, columns=data.columns[:-1])
+    data['name'] = animals
 
     # Create SOFm grid.
     mSOFM = SOFM_Core.SOFMGrid(input_size=29 , row_size=10, col_size=10)
     # Train grid.
     dataValues = data[data.columns[:-1]].values
     dataValues = np.hstack((dataValues, np.array(oneHotLabelsList)))
-    mSOFM.train(dataValues, organize_epochs=20, finetune_epochs=10)
+    mSOFM.train(dataValues, organize_epochs=15, finetune_epochs=10)
 
     # Create a data set for probing, where each animal label has attributes 0.
     zeroAttrData = np.zeros((data[data.columns[:-1]].values.shape))
