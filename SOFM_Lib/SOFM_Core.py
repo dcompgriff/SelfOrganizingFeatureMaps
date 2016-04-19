@@ -16,10 +16,11 @@ class SOFMGrid:
     def __init__(self, input_size=1, row_size=1, col_size=1):
         # Eta, learning rate. Initially, set as constant.
         self.eta0 = .1
-        self.eta_tau = 1000
+        self.eta_tau = 2000
         # Time constant for the decaying sigma.
-        self.sigma0 = 2
-        self.sigma_tau = 1400
+        self.sigma0 = 5
+        self.sigma_tau = 1243
+        #self.sigma_tau = 50
         # SOFM Grid size.
         self.row_size = row_size
         self.col_size = col_size
@@ -28,7 +29,7 @@ class SOFMGrid:
         # Make a list of neuorns, where the positions are set based on the grid and row size.
         for row in range(0, row_size):
             for col in range(0, col_size):
-                self.neurons.append(Neuron(row, col, input_size=self.input_size))
+                self.neurons.append(Neuron(row, col, input_size=self.input_size, weight_lbound=-0.05, weight_ubound=0.05))
 
     '''
     This function expects a 2 dimensional numpy array, with
@@ -44,17 +45,17 @@ class SOFMGrid:
         sigma(t) = sigmo_0*exp(-t/tau)
             -Tau is a time constant (Typically around 1000ish).
     '''
-    def train(self, train_data, epochs=2000):
+    def train(self, train_data, organize_epochs=2000, finetune_epochs=10000):
         # Time variable for the decaying sigma.
         time = 0
         # Get a copy of the training data that can be shuffled.
         mTrainData = train_data.copy()
 
-        # Iterate over the number of time iterations.
-        for epoch in range(0, epochs):
+        # Organizing phase.
+        for epoch in range(0, organize_epochs):
             print("Epoch: " + str(epoch))
             # Shuffle the training data.
-            np.random.shuffle(mTrainData)
+            #np.random.shuffle(mTrainData)
             # Loop over each datapoint.
             for dataPoint in mTrainData[:]:
                 # Get the row and column for the closest neuron.
@@ -63,6 +64,21 @@ class SOFMGrid:
                 self.updateWeights(index, dataPoint, time)
                 #Increment the time parameter.
                 time += 1
+                
+        # Fine tuning phase.
+        self.eta0 = 0.001
+        self.sigma0 = 1
+        time = 0
+        for epoch in range(0, finetune_epochs):
+            print("Fine tune epoch: " + str(epoch))
+            # Shuffle the training data.
+            np.random.shuffle(mTrainData)
+            # Loop over each datapoint.
+            for dataPoint in mTrainData[:]:
+                # Get the row and column for the closest neuron.
+                row, col, index = self.findClosestNeuron(dataPoint)
+                # Update all weights.
+                self.updateWeights(index, dataPoint, time)
 
     '''
     Update the weights in the network using a radial distance function.
@@ -85,7 +101,7 @@ class SOFMGrid:
         i_pos = np.array([self.neurons[i].row, self.neurons[i].col])
         i_max_pos = np.array([self.neurons[i_max].row, self.neurons[i_max].col])
         # Calculate the time-shrinking, radial distance function.
-        radDist = math.exp( -1.0*(scipy_dist.euclidean(i_pos, i_max_pos)**2) / (2.0*(self.sigma(t)**2)) )
+        radDist = math.exp( -1.0*(np.linalg.norm(i_pos - i_max_pos)**2) / (2.0*(self.sigma(t)**2)) )
         return radDist
 
     '''
@@ -108,13 +124,23 @@ class SOFMGrid:
         minDist = 1000000000
         maxIndex = 0
         for i in range(0, len(self.neurons)):
-            dist = self.neurons[i].dist(x)
+            dist = np.linalg.norm(self.neurons[i].weights - x)
             if dist < minDist:
                 minDist = dist
                 maxPos = (self.neurons[i].row, self.neurons[i].col)
                 maxIndex = i
 
         return maxPos[0], maxPos[1], maxIndex
+
+    '''
+    
+    '''
+    def getGridResponses(self, x):
+        responseTupleList = []
+        for neuron in self.neurons:
+            responseTupleList.append((neuron.row, neuron.col, neuron.output(x)))
+        
+        return responseTupleList
 
     '''
     Returns a list of tuples, where each tuple is a neuron with:
@@ -175,7 +201,7 @@ class SOFMGrid:
 SOFM neuron abstraction.
 '''
 class Neuron:
-    def __init__(self, row, col, input_size=1, weight_lbound = -1, weight_ubound = 1):
+    def __init__(self, row, col, input_size=1, weight_lbound = -0.05, weight_ubound = 0.05):
         self.weights = np.random.uniform(weight_lbound, weight_ubound, input_size)
         self.row = row
         self.col = col
