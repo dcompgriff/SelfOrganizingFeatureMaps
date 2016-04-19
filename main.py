@@ -10,11 +10,11 @@ training the SOFM core.
 import numpy as np
 import pandas as pd
 import scipy as scipy
+import pickle
 from SOFM_Lib import SOFM_Core
 import matplotlib.pyplot as plt
 
 from mpl_toolkits.mplot3d import Axes3D
-
 
 def getOneHotDict(nameSet, scale):
     mDict = {}
@@ -57,7 +57,7 @@ def main():
     # Train grid.
     dataValues = data[data.columns[:-1]].values
     dataValues = np.hstack((dataValues, np.array(oneHotLabelsList)))
-    mSOFM.train(dataValues, organize_epochs=15, finetune_epochs=10)
+    mSOFM.train(dataValues, organize_epochs=2000, finetune_epochs=50000)
 
     # Create a data set for probing, where each animal label has attributes 0.
     zeroAttrData = np.zeros((data[data.columns[:-1]].values.shape))
@@ -105,6 +105,9 @@ def main():
     ax.plot_trisurf(xVals, yVals, zVals)
     plt.show()
     
+    # Save the SOFM in a file.
+    with open('./mSOFM.pkl', 'wb') as f:
+        pickle.dump(mSOFM, f)
 
 if __name__ == "__main__":
     main()
