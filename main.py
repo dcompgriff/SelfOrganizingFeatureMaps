@@ -108,9 +108,43 @@ def main():
     # Save the SOFM in a file.
     with open('./mSOFM.pkl', 'wb') as f:
         pickle.dump(mSOFM, f)
+        
+def part2():
+    global mSOFM
+    
+    labels = ['goat', 'pig', 'badger', 'ostrich', 'bat', 'blue whale', 'killer whale']
+    newAnimals = np.array([[0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
+                           [0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
+                            [1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0], 
+                            [0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0],
+                            [1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1, 0],
+                            [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+                            [0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1]])
+    newAnimals = np.hstack((newAnimals, np.zeros((newAnimals.shape[0], 16) )))
+    
+    
+    # Find the closest class for each neuron.
+    tupList = mSOFM.getMaxActivations(newAnimals, classLabels=labels)
+    tups = list(map(lambda item: (item[0], item[1]), tupList))
+    for row in range(0, 10):
+        for col in range(0, 10):
+            if (row, col) not in tups:
+                tupList.append((row, col, '-'))
+
+    xVals = list(map(lambda item: item[0], tupList))
+    yVals = list(map(lambda item: item[1], tupList))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    fig.set_size_inches(10, 8, forward=True)
+    ax.scatter(xVals, yVals)
+    for tup in tupList:
+        ax.text(tup[0], tup[1], tup[2])
+    plt.show()
+    
 
 if __name__ == "__main__":
-    main()
+    #main()
+    part2()
 
 
 
